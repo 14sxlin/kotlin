@@ -18,12 +18,14 @@
 
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.UnknownDomainObjectException
 import org.gradle.api.internal.tasks.testing.filter.DefaultTestFilter
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.extra
 import org.gradle.kotlin.dsl.task
 import org.gradle.kotlin.dsl.the
+import org.jetbrains.intellij.IntelliJPluginExtension
 import java.lang.Character.isLowerCase
 import java.lang.Character.isUpperCase
 
@@ -74,6 +76,14 @@ fun Project.projectTest(taskName: String = "test", body: Test.() -> Unit = {}): 
     environment("PROJECT_BUILD_DIR", buildDir)
     systemProperty("jps.kotlin.home", rootProject.extra["distKotlinHomeDir"])
     systemProperty("kotlin.ni", if (rootProject.hasProperty("newInferenceTests")) "true" else "false")
+    afterEvaluate {
+        try {
+            the<IntelliJPluginExtension>().sandboxDirectory?.let {
+                systemProperty("idea.home.path", it)
+            }
+        }
+        catch (_: UnknownDomainObjectException) {} // just ignoring - setting the variable only if the intellij plugin is used and configured appropriately
+    }
     body()
 }
 
